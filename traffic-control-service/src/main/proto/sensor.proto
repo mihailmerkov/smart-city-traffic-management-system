@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.mihailmerkov.sctms.sensor";
+option java_outer_classname = "SensorProto";
+
+package sensor;
+
+service SensorService {
+  // Server Streaming: Stream sensor data from multiple sensors
+  rpc StreamSensorData(SensorSubscription) returns (stream SensorReading);
+}
+
+message SensorSubscription {
+  repeated string intersection_ids = 1;
+  int32 interval_seconds = 2;
+}
+
+message SensorReading {
+  string sensor_id = 1;
+  string intersection_id = 2;
+  int32 vehicle_count = 3;
+  double average_speed = 4;
+  string road_condition = 5;
+  int64 timestamp = 6;
+  bool incident_detected = 7;
+}
+

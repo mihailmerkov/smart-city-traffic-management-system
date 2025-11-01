@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.mihailmerkov.sctms.light";
+option java_outer_classname = "TrafficLightProto";
+
+package trafficlight;
+
+service TrafficLightService {
+  // Bidirectional Streaming: Coordinate traffic lights
+  rpc CoordinateTrafficLights(stream TrafficLightCommand)
+      returns (stream TrafficLightStatus);
+}
+
+message TrafficLightCommand {
+  string intersection_id = 1;
+  string phase = 2;  // "GREEN_NS", "GREEN_EW", "RED_ALL"
+  int32 duration_seconds = 3;
+  int32 priority = 4;
+}
+
+message TrafficLightStatus {
+  string intersection_id = 1;
+  string current_phase = 2;
+  int32 time_remaining = 3;
+  int32 queue_length = 4;
+  int64 timestamp = 5;
+  bool emergency_mode = 6;
+}
+
