@@ -1,79 +1,157 @@
-# traffic-control-service
+# Traffic Control Service
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+## Overview
+The Traffic Control Service is the central orchestrator microservice that coordinates all traffic management operations. It acts as a gRPC client to both Sensor and Traffic Light services, aggregates data, and exposes REST APIs and WebSocket endpoints for the frontend application.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Technology Stack
+- **Framework**: Quarkus 3.29.0
+- **Language**: Java 21
+- **Protocols**: 
+  - gRPC Client (Server Streaming & Bidirectional)
+  - REST API (HTTP/JSON)
+  - WebSocket (Real-time streaming)
+- **Build Tool**: Maven
+- **Key Dependencies**:
+  - Quarkus gRPC
+  - Quarkus Mutiny (Reactive Programming)
+  - Quarkus WebSockets
+  - Quarkus RESTEasy Jackson
 
-## Running the application in dev mode
+## Architecture Role
+This service acts as the **orchestrator** in the system, serving as:
+- gRPC client consuming streams from Sensor Service (Server Streaming)
+- gRPC client coordinating with Traffic Light Service (Bidirectional Streaming)
+- REST API provider for the frontend
+- WebSocket server for real-time data streaming to the frontend
 
-You can run your application in dev mode that enables live coding using:
+## Ports
+- **HTTP Port**: 8001
+- **gRPC Port**: 8001 (shared with HTTP)
+- **WebSocket**: `ws://localhost:8001/ws/traffic`
 
-```shell script
+## Features
+- Central coordination of all traffic management operations
+- Real-time data aggregation from sensor streams
+- Traffic light phase optimization algorithms
+- REST API for on-demand queries
+- WebSocket streaming for real-time frontend updates
+- CORS enabled for frontend integration
+- Health monitoring and status reporting
+
+## Prerequisites
+- Java 21 or higher
+- Maven 3.8+
+- Sensor Control Service running on port 8002
+- Traffic Light Service running on port 8003
+
+## How to Download Dependencies
+```bash
+# Navigate to the service directory
+cd traffic-control-service
+
+# Download all Maven dependencies
+./mvnw clean install
+```
+
+## How to Start the Service
+
+### Development Mode (with hot reload)
+```bash
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+### Production Mode
+```bash
+# Build the application
+./mvnw clean package
 
-## Packaging and running the application
-
-The application can be packaged using:
-
-```shell script
-./mvnw package
+# Run the JAR
+java -jar target/quarkus-app/quarkus-run.jar
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+### Using Docker
+```bash
+# Build Docker image
+docker build -f src/main/docker/Dockerfile.jvm -t traffic-control-service .
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
+# Run container
+docker run -p 8001:8001 traffic-control-service
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+## Testing the Service
+Once started, the service will be available at:
+- **REST API**: `http://localhost:8001/api/traffic`
+- **WebSocket**: `ws://localhost:8001/ws/traffic`
+- **Health Check**: `http://localhost:8001/q/health`
 
-## Creating a native executable
+### REST API Endpoints
+```bash
+# Get all intersections
+curl http://localhost:8001/api/traffic/intersections
 
-You can create a native executable using:
+# Get specific intersection
+curl http://localhost:8001/api/traffic/intersections/INT-001
 
-```shell script
-./mvnw package -Dnative
+# Health check
+curl http://localhost:8001/api/traffic/health
 ```
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
+### WebSocket Connection
+Connect to `ws://localhost:8001/ws/traffic` to receive real-time traffic updates combining sensor data and light status.
 
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
+## API Documentation
+
+### REST Endpoints
+- `GET /api/traffic/intersections` - Returns all intersection statistics
+- `GET /api/traffic/intersections/{id}` - Returns specific intersection stats
+- `GET /api/traffic/health` - Service health status
+
+### WebSocket Stream
+- `ws://localhost:8001/ws/traffic` - Real-time bidirectional stream
+  - Sends combined sensor and traffic light data
+  - Updates every 2 seconds
+  - JSON format with sensors[] and lights[] arrays
+
+### gRPC Clients (Internal)
+- Connects to Sensor Service (port 8002) for sensor data streaming
+- Connects to Traffic Light Service (port 8003) for phase coordination
+
+## Configuration
+Key configurations in `application.properties`:
+- `quarkus.http.port=8001` - HTTP, gRPC, and WebSocket port
+- `quarkus.grpc.clients.sensor-service.host=localhost`
+- `quarkus.grpc.clients.sensor-service.port=8002`
+- `quarkus.grpc.clients.traffic-light-service.host=localhost`
+- `quarkus.grpc.clients.traffic-light-service.port=8003`
+- CORS enabled for frontend at `http://localhost:4200`
+
+## Traffic Optimization Logic
+The service implements intelligent algorithms to:
+1. Analyze real-time sensor data (vehicle counts, speeds)
+2. Calculate optimal traffic light phase durations
+3. Send coordination commands to traffic lights
+4. Monitor and adjust based on congestion levels
+5. Handle incident detection and emergency routing
+
+## Development
+```bash
+# Run tests
+./mvnw test
+
+# Run in dev mode with debugging
+./mvnw quarkus:dev -Ddebug=5004
 ```
 
-You can then execute your native executable with: `./target/traffic-control-service-1.0.0-SNAPSHOT-runner`
+## Dependencies
+This service requires both backend services to be running:
+1. Start Sensor Control Service (port 8002)
+2. Start Traffic Light Service (port 8003)
+3. Start Traffic Control Service (port 8001)
 
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
+## Notes
+- Acts as the main integration point between all microservices
+- Bridges gRPC backend services with HTTP/WebSocket frontend
+- Manages 6 intersections: INT-001 through INT-006
+- Implements reactive programming patterns using Mutiny
+- Provides comprehensive logging for debugging coordination logic
 
-## Related Guides
-
-- Mutiny ([guide](https://quarkus.io/guides/mutiny-primer)): Write reactive applications with the modern Reactive Programming library Mutiny
-- WebSockets ([guide](https://quarkus.io/guides/websockets)): WebSocket communication channel support
-
-## Provided Code
-
-### gRPC
-
-Create your first gRPC service
-
-[Related guide section...](https://quarkus.io/guides/grpc-getting-started)
-
-### RESTEasy JAX-RS
-
-Easily start your RESTful Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started#the-jax-rs-resources)
-
-### WebSockets
-
-WebSocket communication channel starter code
-
-[Related guide section...](https://quarkus.io/guides/websockets)
