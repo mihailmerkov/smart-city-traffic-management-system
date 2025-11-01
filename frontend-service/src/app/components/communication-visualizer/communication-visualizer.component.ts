@@ -23,17 +23,33 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
           </div>
         </div>
 
-        <!-- Connection: REST API -->
-        <div class="layer connection-layer">
-          <div class="connection-flow rest-flow" [class.active]="hasActiveRest">
-            <div class="flow-arrow">
-              <div class="arrow-line vertical"></div>
-              <div class="arrow-head">▼</div>
+        <!-- Frontend Connections: REST + WebSocket -->
+        <div class="layer frontend-connections-layer">
+          <div class="dual-connections">
+            <!-- REST Connection -->
+            <div class="connection-flow rest-flow" [class.active]="hasActiveRest">
+              <div class="flow-arrow">
+                <div class="arrow-line vertical rest"></div>
+                <div class="arrow-head rest">▼</div>
+              </div>
+              <div class="flow-label rest-label">
+                <span class="label-type">REST API</span>
+                <span class="label-detail">HTTP Request/Response</span>
+                <span class="label-method">GET /api/traffic/*</span>
+              </div>
             </div>
-            <div class="flow-label">
-              <span class="label-type">REST API</span>
-              <span class="label-detail">HTTP/JSON</span>
-              <span class="label-method">GET /api/traffic/*</span>
+
+            <!-- WebSocket Connection -->
+            <div class="connection-flow websocket-flow" [class.active]="hasActiveWebSocket">
+              <div class="flow-arrow">
+                <div class="arrow-line vertical websocket"></div>
+                <div class="arrow-head websocket">⇅</div>
+              </div>
+              <div class="flow-label websocket-label">
+                <span class="label-type">WebSocket Stream</span>
+                <span class="label-detail">Real-time Bidirectional</span>
+                <span class="label-method">ws://localhost:8001/ws/traffic</span>
+              </div>
             </div>
           </div>
         </div>
@@ -43,8 +59,8 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
           <div class="service-node control">
             <div class="node-icon">🎛️</div>
             <div class="node-name">Traffic Control Service</div>
-            <div class="node-tech">Quarkus gRPC Orchestrator</div>
-            <div class="node-port">HTTP :8001 | gRPC Client</div>
+            <div class="node-tech">Quarkus Orchestrator + REST + WebSocket</div>
+            <div class="node-port">REST :8001/api | WS :8001/ws | gRPC Client</div>
           </div>
         </div>
 
@@ -99,10 +115,16 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
 
       <div class="communication-stats">
         <div class="stat-card rest-stat">
-          <div class="stat-icon">📊</div>
-          <div class="stat-value">{{ restCallCount }}</div>
+          <div class="stat-icon">🌐</div>
+          <div class="stat-value">{{ restApiCallCount }}</div>
           <div class="stat-label">REST API Calls</div>
           <div class="stat-route">Frontend → Control</div>
+        </div>
+        <div class="stat-card websocket-stat">
+          <div class="stat-icon">🔌</div>
+          <div class="stat-value">{{ webSocketMessageCount }}</div>
+          <div class="stat-label">WebSocket Messages</div>
+          <div class="stat-route">Frontend ⇄ Control</div>
         </div>
         <div class="stat-card stream-stat">
           <div class="stat-icon">📡</div>
@@ -187,9 +209,18 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
       margin-bottom: 10px;
     }
 
-    .connection-layer {
-      margin: 10px 0;
+    .frontend-connections-layer {
+      margin: 15px 0;
+      padding: 0 20px;
     }
+
+    .dual-connections {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      align-items: flex-start;
+    }
+
 
     .control-layer {
       margin: 10px 0 20px 0;
@@ -295,6 +326,18 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
       border-radius: 2px;
     }
 
+    .arrow-line.rest {
+      background: repeating-linear-gradient(
+        180deg,
+        #3b82f6 0px,
+        #3b82f6 10px,
+        transparent 10px,
+        transparent 15px
+      );
+      background-size: 4px 15px;
+      height: 60px;
+    }
+
     .arrow-line.stream {
       background: repeating-linear-gradient(
         180deg,
@@ -304,6 +347,22 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
         transparent 15px
       );
       background-size: 4px 15px;
+    }
+
+    .arrow-line.websocket {
+      background: repeating-linear-gradient(
+        180deg,
+        #8b5cf6 0px,
+        #8b5cf6 8px,
+        transparent 8px,
+        transparent 12px,
+        #8b5cf6 12px,
+        #8b5cf6 20px,
+        transparent 20px,
+        transparent 24px
+      );
+      background-size: 4px 24px;
+      height: 70px;
     }
 
     .arrow-line.bidir {
@@ -318,17 +377,45 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
       height: 50px;
     }
 
+    .connection-flow.active .arrow-line.websocket {
+      animation: websocket-flow 0.6s linear infinite;
+    }
+
+    @keyframes websocket-flow {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 24px; }
+    }
+
     .connection-flow.active .arrow-line {
       background: #3b82f6;
       box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    }
+
+    .connection-flow.active .arrow-line.rest {
+      animation: rest-flow-down 1s linear infinite;
     }
 
     .connection-flow.active .arrow-line.stream {
       animation: stream-flow-down 1s linear infinite;
     }
 
+    .arrow-head.rest {
+      color: #3b82f6;
+      font-size: 24px;
+    }
+
+    .arrow-head.websocket {
+      color: #8b5cf6;
+      font-size: 28px;
+    }
+
     .connection-flow.active .arrow-line.bidir {
       animation: bidir-flow-vertical 0.8s linear infinite;
+    }
+
+    @keyframes rest-flow-down {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 15px; }
     }
 
     @keyframes stream-flow-down {
@@ -339,6 +426,11 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
     @keyframes bidir-flow-vertical {
       0% { background-position: 0 0; }
       100% { background-position: 0 12px; }
+    }
+
+    .connection-flow.active .arrow-head.websocket {
+      color: #7c3aed;
+      animation: pulse-arrow 0.8s infinite;
     }
 
     .arrow-head {
@@ -413,6 +505,14 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
       align-self: flex-start;
     }
 
+    .rest-label .label-type {
+      color: #2563eb;
+    }
+
+    .websocket-label .label-type {
+      color: #7c3aed;
+    }
+
     .streaming-label .label-type {
       color: #16a34a;
     }
@@ -437,7 +537,7 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
 
     .communication-stats {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 15px;
       margin-bottom: 30px;
     }
@@ -455,9 +555,10 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
     }
 
     .rest-stat { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
+    .websocket-stat { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; }
     .stream-stat { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; }
     .bidir-stat { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: white; }
-    .total-stat { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; }
+    .total-stat { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
 
     .stat-icon {
       font-size: 32px;
@@ -558,31 +659,28 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
   `]
 })
 export class CommunicationVisualizerComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
   logs: CommunicationLog[] = [];
-  restCallCount = 0;
+  restApiCallCount = 0;
+  webSocketMessageCount = 0;
   sensorStreamCount = 0;
   lightCommandCount = 0;
   totalMessages = 0;
 
   hasActiveRest = false;
+  hasActiveWebSocket = false;
   hasActiveSensorStream = false;
   hasActiveLightStream = false;
 
-  private destroy$ = new Subject<void>();
-
-  constructor(private realtimeService: RealtimeDataService) {}
+  constructor(private realtimeDataService: RealtimeDataService) {}
 
   ngOnInit(): void {
-    this.realtimeService.communicationLogs$
+    this.realtimeDataService.communicationLogs$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(log => {
+      .subscribe((log: CommunicationLog) => {
         this.logs.push(log);
-        this.updateCountsAndIndicators(log);
-
-        // Keep only last 100 logs
-        if (this.logs.length > 100) {
-          this.logs = this.logs.slice(-100);
-        }
+        this.updateStats(log);
       });
   }
 
@@ -591,14 +689,21 @@ export class CommunicationVisualizerComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private updateCountsAndIndicators(log: CommunicationLog): void {
+  private updateStats(log: CommunicationLog): void {
     this.totalMessages++;
 
     // REST API calls (Frontend → Traffic Control)
     if (log.type === 'UNARY' && log.service === 'Traffic Control') {
-      this.restCallCount++;
+      this.restApiCallCount++;
       this.hasActiveRest = true;
       setTimeout(() => this.hasActiveRest = false, 1000);
+    }
+
+    // WebSocket messages (Frontend ⇄ Traffic Control)
+    else if (log.service === 'Traffic Control' && log.type === 'SERVER_STREAMING') {
+      this.webSocketMessageCount++;
+      this.hasActiveWebSocket = true;
+      setTimeout(() => this.hasActiveWebSocket = false, 1000);
     }
 
     // Server Streaming (Sensor → Traffic Control)
