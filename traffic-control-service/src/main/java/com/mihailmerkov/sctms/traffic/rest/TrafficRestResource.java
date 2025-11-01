@@ -8,6 +8,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.jboss.logging.Logger;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * REST API for frontend to access traffic control data.
@@ -29,9 +30,12 @@ public class TrafficRestResource {
      */
     @GET
     @Path("/intersections")
-    public List<IntersectionStats> getAllIntersections() {
+    public List<IntersectionStatsDTO> getAllIntersections() {
         LOG.info("REST: GET /api/traffic/intersections");
-        return coordinationService.getAllIntersections().getIntersectionsList();
+        return coordinationService.getAllIntersections().getIntersectionsList()
+                .stream()
+                .map(IntersectionStatsDTO::fromProtobuf)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -40,9 +44,10 @@ public class TrafficRestResource {
      */
     @GET
     @Path("/intersections/{id}")
-    public IntersectionStats getIntersectionStats(@PathParam("id") String intersectionId) {
+    public IntersectionStatsDTO getIntersectionStats(@PathParam("id") String intersectionId) {
         LOG.infof("REST: GET /api/traffic/intersections/%s", intersectionId);
-        return coordinationService.getIntersectionStats(intersectionId);
+        IntersectionStats stats = coordinationService.getIntersectionStats(intersectionId);
+        return IntersectionStatsDTO.fromProtobuf(stats);
     }
 
     /**

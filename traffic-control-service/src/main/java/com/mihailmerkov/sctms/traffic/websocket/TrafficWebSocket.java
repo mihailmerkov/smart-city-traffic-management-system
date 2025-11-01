@@ -1,7 +1,7 @@
 package com.mihailmerkov.sctms.traffic.websocket;
 
-import com.mihailmerkov.sctms.sensor.SensorReading;
 import com.mihailmerkov.sctms.light.TrafficLightStatus;
+import com.mihailmerkov.sctms.sensor.SensorReading;
 import com.mihailmerkov.sctms.traffic.service.SensorClientService;
 import com.mihailmerkov.sctms.traffic.service.TrafficLightClientService;
 import jakarta.enterprise.context.ApplicationScoped;

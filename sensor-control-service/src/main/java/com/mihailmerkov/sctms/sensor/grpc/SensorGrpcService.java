@@ -1,6 +1,8 @@
 package com.mihailmerkov.sctms.sensor.grpc;
 
-import com.mihailmerkov.sctms.sensor.*;
+import com.mihailmerkov.sctms.sensor.SensorReading;
+import com.mihailmerkov.sctms.sensor.SensorService;
+import com.mihailmerkov.sctms.sensor.SensorSubscription;
 import com.mihailmerkov.sctms.sensor.simulator.TrafficSimulator;
 import io.quarkus.grpc.GrpcService;
 import io.smallrye.mutiny.Multi;
