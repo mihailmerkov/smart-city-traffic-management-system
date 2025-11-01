@@ -17,7 +17,7 @@ This project demonstrates all three gRPC communication patterns using Java Quark
 
 The system consists of three microservices:
 
-1. **Sensor Control Service** (Ports: HTTP 8000, gRPC 9002)
+1. **Sensor Control Service** (Ports: HTTP 8002, gRPC 9002)
    - Implements **Server Streaming** pattern
    - Simulates IoT traffic sensors at intersections
    - Streams real-time vehicle counts, speeds, and road conditions
@@ -159,7 +159,7 @@ ws.onmessage = (event) => {
 
 | Service | HTTP Port | gRPC Port |
 |---------|-----------|-----------|
-| Sensor Control Service | 8000 | 9002 |
+| Sensor Control Service | 8002 | 9002 |
 | Traffic Control Service | 8001 | 9001 |
 | Traffic Light Service | 8002 | 9003 |
 

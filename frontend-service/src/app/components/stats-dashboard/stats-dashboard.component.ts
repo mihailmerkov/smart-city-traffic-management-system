@@ -1,8 +1,16 @@
-import {Component, Injectable, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {Observable, Subject, takeUntil} from 'rxjs';
+import {Subject, takeUntil} from 'rxjs';
 import {RealtimeDataService} from '../../services/realtime-data.service';
-import {HttpClient} from '@angular/common/http';
+import {HealthCheckService, ServiceHealth} from '../../services/health-check.service';
+
+export interface IntersectionStats {
+  intersectionId: string;
+  vehicleCount: number;
+  avgWaitTime: number;
+  currentPhase: string;
+  timestamp: number;
+}
 
 @Component({
   selector: 'app-stats-dashboard',
@@ -110,25 +118,13 @@ import {HttpClient} from '@angular/common/http';
         <div class="chart-card">
           <h3>System Health</h3>
           <div class="health-indicators">
-            <div class="health-item">
-              <div class="health-icon">✅</div>
+            <div class="health-item" *ngFor="let service of serviceHealthStatus">
+              <div class="health-icon">{{ getHealthIcon(service.status) }}</div>
               <div class="health-info">
-                <div class="health-name">Sensor Service</div>
-                <div class="health-status online">Online</div>
-              </div>
-            </div>
-            <div class="health-item">
-              <div class="health-icon">✅</div>
-              <div class="health-info">
-                <div class="health-name">Traffic Control</div>
-                <div class="health-status online">Online</div>
-              </div>
-            </div>
-            <div class="health-item">
-              <div class="health-icon">✅</div>
-              <div class="health-info">
-                <div class="health-name">Traffic Light</div>
-                <div class="health-status online">Online</div>
+                <div class="health-name">{{ service.name }}</div>
+                <div class="health-status" [class]="service.status">
+                  {{ service.status === 'online' ? 'Online' : service.status === 'offline' ? 'Offline' : 'Checking...' }}
+                </div>
               </div>
             </div>
           </div>
@@ -394,6 +390,14 @@ import {HttpClient} from '@angular/common/http';
     .health-status.online {
       color: #22c55e;
     }
+
+    .health-status.offline {
+      color: #ef4444;
+    }
+
+    .health-status.checking {
+      color: #f59e0b;
+    }
   `]
 })
 export class StatsDashboardComponent implements OnInit, OnDestroy {
@@ -402,11 +406,15 @@ export class StatsDashboardComponent implements OnInit, OnDestroy {
   avgWaitTime = 0;
   activeIntersections = 0;
   trafficLevel = 'Normal';
+  serviceHealthStatus: ServiceHealth[] = [];
 
   private destroy$ = new Subject<void>();
   private intersectionsMap = new Map<string, IntersectionStats>();
 
-  constructor(private realtimeService: RealtimeDataService) {}
+  constructor(
+    private realtimeService: RealtimeDataService,
+    private healthCheckService: HealthCheckService
+  ) {}
 
   ngOnInit(): void {
     this.realtimeService.intersectionUpdates$
@@ -414,6 +422,13 @@ export class StatsDashboardComponent implements OnInit, OnDestroy {
       .subscribe(stats => {
         this.intersectionsMap.set(stats.intersectionId, stats);
         this.updateDashboard();
+      });
+
+    // Subscribe to health check updates
+    this.healthCheckService.checkAllServices()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(healthStatus => {
+        this.serviceHealthStatus = healthStatus;
       });
   }
 
@@ -481,44 +496,11 @@ export class StatsDashboardComponent implements OnInit, OnDestroy {
     if (vehicleCount < 45) return '#f97316';
     return '#ef4444';
   }
-}
 
-export interface IntersectionStats {
-  intersectionId: string;
-  vehicleCount: number;
-  avgWaitTime: number;
-  currentPhase: string;
-  timestamp: number;
-}
-
-export interface SensorReading {
-  sensorId: string;
-  intersectionId: string;
-  vehicleCount: number;
-  averageSpeed: number;
-  roadCondition: string;
-  timestamp: number;
-  incidentDetected: boolean;
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class TrafficApiService {
-  private baseUrl = 'http://localhost:8001/api/traffic';
-
-  constructor(private http: HttpClient) { }
-
-  getAllIntersections(): Observable<IntersectionStats[]> {
-    return this.http.get<IntersectionStats[]>(`${this.baseUrl}/intersections`);
-  }
-
-  getIntersectionStats(intersectionId: string): Observable<IntersectionStats> {
-    return this.http.get<IntersectionStats>(`${this.baseUrl}/intersections/${intersectionId}`);
-  }
-
-  checkHealth(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/health`);
+  getHealthIcon(status: string): string {
+    if (status === 'online') return '✅';
+    if (status === 'offline') return '❌';
+    return '⏳';
   }
 }
 

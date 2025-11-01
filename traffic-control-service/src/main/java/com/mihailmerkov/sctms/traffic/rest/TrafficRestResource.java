@@ -52,12 +52,27 @@ public class TrafficRestResource {
 
     /**
      * GET /api/traffic/health
-     * Simple health check endpoint.
+     * Returns health status of the service.
      */
     @GET
     @Path("/health")
-    public String health() {
-        return "{\"status\": \"UP\", \"service\": \"traffic-control-service\"}";
+    public HealthStatus health() {
+        return new HealthStatus("traffic-control-service", "UP");
+    }
+}
+
+/**
+ * Simple health status response.
+ */
+class HealthStatus {
+    public String service;
+    public String status;
+    public long timestamp;
+
+    public HealthStatus(String service, String status) {
+        this.service = service;
+        this.status = status;
+        this.timestamp = System.currentTimeMillis();
     }
 }
 

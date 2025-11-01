@@ -30,7 +30,7 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
         <div class="service-box control">
           <div class="service-icon">🎛️</div>
           <div class="service-name">Traffic Control</div>
-          <div class="service-port">:8001 / :9001</div>
+          <div class="service-port">:8001</div>
         </div>
 
         <div class="connection-arrows horizontal">
@@ -50,13 +50,13 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
           <div class="service-box sensor">
             <div class="service-icon">📡</div>
             <div class="service-name">Sensor Service</div>
-            <div class="service-port">:8000 / :9002</div>
+            <div class="service-port">:8002</div>
           </div>
 
           <div class="service-box light">
             <div class="service-icon">🚦</div>
             <div class="service-name">Traffic Light</div>
-            <div class="service-port">:8002 / :9003</div>
+            <div class="service-port">:8003</div>
           </div>
         </div>
       </div>
