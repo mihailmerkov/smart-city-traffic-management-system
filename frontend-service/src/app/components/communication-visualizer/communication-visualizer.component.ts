@@ -9,17 +9,21 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
   imports: [CommonModule],
   template: `
     <div class="visualizer-container">
-      <h2>🔄 Communication Architecture</h2>
+      <h2>♻️ Communication Architecture</h2>
       <p class="subtitle">Real-time microservices communication flow</p>
 
-      <div class="architecture-diagram">
+      <div class="architecture-diagram" aria-label="Microservice communication diagram">
         <!-- Layer 1: Frontend -->
-        <div class="layer frontend-layer">
-          <div class="service-node frontend">
+        <div class="layer frontend-layer" title="User Interface Layer">
+          <div class="service-node frontend" role="group" aria-label="Frontend Service (Angular UI)">
             <div class="node-icon">🖥️</div>
             <div class="node-name">Frontend Service</div>
-            <div class="node-tech">Angular 19 + SSR</div>
+            <div class="node-tech">Angular UI</div>
             <div class="node-port">Port :4200</div>
+            <div class="node-badges">
+              <span class="badge" title="REST snapshot requests">REST</span>
+              <span class="badge" title="WebSocket merged updates">WS</span>
+            </div>
           </div>
         </div>
 
@@ -27,27 +31,27 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
         <div class="layer frontend-connections-layer">
           <div class="dual-connections">
             <!-- REST Connection -->
-            <div class="connection-flow rest-flow" [class.active]="hasActiveRest">
+            <div class="connection-flow rest-flow" [class.active]="hasActiveRest" title="On-demand HTTP/JSON snapshot requests from Frontend to Traffic Control">
               <div class="flow-arrow">
-                <div class="arrow-line vertical rest"></div>
+                <div class="arrow-line vertical rest" aria-hidden="true"></div>
                 <div class="arrow-head rest">▼</div>
               </div>
               <div class="flow-label rest-label">
                 <span class="label-type">REST API</span>
-                <span class="label-detail">HTTP Request/Response</span>
+                <span class="label-detail">Unary Request / Response</span>
                 <span class="label-method">GET /api/traffic/*</span>
               </div>
             </div>
 
             <!-- WebSocket Connection -->
-            <div class="connection-flow websocket-flow" [class.active]="hasActiveWebSocket">
+            <div class="connection-flow websocket-flow" [class.active]="hasActiveWebSocket" title="Continuous merged traffic updates (sensors + lights)">
               <div class="flow-arrow">
-                <div class="arrow-line vertical websocket"></div>
+                <div class="arrow-line vertical websocket" aria-hidden="true"></div>
                 <div class="arrow-head websocket">⇅</div>
               </div>
               <div class="flow-label websocket-label">
-                <span class="label-type">WebSocket Stream</span>
-                <span class="label-detail">Real-time Bidirectional</span>
+                <span class="label-type">WebSocket</span>
+                <span class="label-detail">Real-time Push (2s cadence)</span>
                 <span class="label-method">ws://localhost:8001/ws/traffic</span>
               </div>
             </div>
@@ -55,62 +59,101 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
         </div>
 
         <!-- Layer 2: Traffic Control (Orchestrator) -->
-        <div class="layer control-layer">
-          <div class="service-node control">
+        <div class="layer control-layer" title="Orchestrator: aggregates & optimizes">
+          <div class="service-node control" role="group" aria-label="Traffic Control Service (Orchestrator)">
             <div class="node-icon">🎛️</div>
             <div class="node-name">Traffic Control Service</div>
-            <div class="node-tech">Quarkus Orchestrator + REST + WebSocket</div>
-            <div class="node-port">REST :8001/api | WS :8001/ws | gRPC Client</div>
+            <div class="node-tech">Quarkus Orchestrator</div>
+            <div class="node-port">REST/WS :8001 · gRPC Clients</div>
+            <div class="node-badges">
+              <span class="badge badge-secondary" title="Aggregates sensor + light data">AGG</span>
+              <span class="badge badge-secondary" title="Optimization / coordination logic">OPT</span>
+              <span class="badge badge-outline" title="Optional gRPC server (not used by Frontend)">gRPC Srv *</span>
+            </div>
           </div>
         </div>
 
         <!-- Layer 3: gRPC Connections -->
-        <div class="layer grpc-layer">
+        <div class="layer grpc-layer" title="Internal gRPC streaming layer">
           <div class="grpc-connections">
             <!-- Left: Server Streaming from Sensor -->
-            <div class="grpc-flow sensor-flow">
+            <div class="grpc-flow sensor-flow" title="Inbound server streaming of raw sensor readings">
               <div class="connection-flow streaming-flow" [class.active]="hasActiveSensorStream">
                 <div class="flow-arrow">
-                  <div class="arrow-line vertical stream"></div>
+                  <div class="arrow-line vertical stream" aria-hidden="true"></div>
                   <div class="arrow-head stream">▼</div>
                 </div>
                 <div class="flow-label streaming-label">
                   <span class="label-type">Server Streaming</span>
-                  <span class="label-detail">gRPC Stream</span>
+                  <span class="label-detail">Sensor → Control</span>
                   <span class="label-method">streamSensorData()</span>
                 </div>
               </div>
-              <div class="service-node sensor">
+              <div class="service-node sensor" role="group" aria-label="Sensor Service (Data Provider)">
                 <div class="node-icon">📡</div>
                 <div class="node-name">Sensor Service</div>
-                <div class="node-tech">Real-time Data Provider</div>
-                <div class="node-port">gRPC :8000</div>
+                <div class="node-tech">Data Generator</div>
+                <div class="node-port">gRPC :8002</div>
+                <div class="node-badges">
+                  <span class="badge" title="Generates vehicle counts">VEH</span>
+                  <span class="badge" title="Speed & conditions">SPD</span>
+                  <span class="badge" title="Incident detection">INC</span>
+                </div>
               </div>
             </div>
 
             <!-- Right: Bidirectional with Traffic Light -->
-            <div class="grpc-flow light-flow">
+            <div class="grpc-flow light-flow" title="Full duplex optimization commands & phase status">
               <div class="connection-flow bidir-flow" [class.active]="hasActiveLightStream">
-                <div class="flow-arrow bidir">
+                <div class="flow-arrow bidir" aria-hidden="true">
                   <div class="arrow-head up">▲</div>
                   <div class="arrow-line vertical bidir"></div>
                   <div class="arrow-head down">▼</div>
                 </div>
                 <div class="flow-label bidir-label">
-                  <span class="label-type">Bidirectional Stream</span>
-                  <span class="label-detail">gRPC Duplex</span>
+                  <span class="label-type">Bidirectional</span>
+                  <span class="label-detail">Control ⇄ Light</span>
                   <span class="label-method">coordinateTrafficLights()</span>
                 </div>
               </div>
-              <div class="service-node light">
+              <div class="service-node light" role="group" aria-label="Traffic Light Service (Actuator)">
                 <div class="node-icon">🚦</div>
                 <div class="node-name">Traffic Light Service</div>
                 <div class="node-tech">Phase Controller</div>
                 <div class="node-port">gRPC :8003</div>
+                <div class="node-badges">
+                  <span class="badge" title="Current phase status">PHASE</span>
+                  <span class="badge" title="Adaptive timing">ADAPT</span>
+                  <span class="badge" title="Receives optimization commands">CMD</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Diagram Legend -->
+        <div class="legend" aria-label="Protocol legend">
+          <div class="legend-title">Legend</div>
+          <div class="legend-items">
+            <div class="legend-item"><span class="legend-swatch rest"></span><span>REST (Unary HTTP/JSON)</span></div>
+            <div class="legend-item"><span class="legend-swatch websocket"></span><span>WebSocket (Merged updates)</span></div>
+            <div class="legend-item"><span class="legend-swatch stream"></span><span>gRPC Server Streaming (Sensors)</span></div>
+            <div class="legend-item"><span class="legend-swatch bidir"></span><span>gRPC Bidirectional (Lights)</span></div>
+            <div class="legend-item"><span class="legend-swatch optional"></span><span>Optional gRPC Server *</span></div>
+          </div>
+        </div>
+
+        <!-- Collapsible Details -->
+        <details class="details-block">
+          <summary>Advanced: Resilience & Performance</summary>
+          <ul>
+            <li><strong>WebSocket Reconnect:</strong> exponential backoff, resumes with latest snapshot.</li>
+            <li><strong>Sensor Stream:</strong> continuous ticks (~2s) aggregated server-side to reduce payload size.</li>
+            <li><strong>Light Duplex:</strong> command buffering; replays last optimization on re-connect.</li>
+            <li><strong>Optional gRPC Server:</strong> reserved for future gRPC-Web / external analytic consumers.</li>
+            <li><strong>Front-End Strategy:</strong> REST for initial snapshot + WS for deltas avoids polling storm.</li>
+          </ul>
+        </details>
       </div>
 
       <div class="communication-stats">
@@ -167,495 +210,64 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
     </div>
   `,
   styles: [`
-    .visualizer-container {
-      padding: 20px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      margin: 0 0 5px 0;
-      color: #1f2937;
-      font-size: 24px;
-    }
-
-    .subtitle {
-      margin: 0 0 25px 0;
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    .architecture-diagram {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      margin-bottom: 30px;
-      padding: 40px;
-      background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%);
-      border-radius: 16px;
-      border: 2px solid #d1d5db;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .layer {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 15px 0;
-    }
-
-    .frontend-layer {
-      margin-bottom: 10px;
-    }
-
-    .frontend-connections-layer {
-      margin: 15px 0;
-      padding: 0 20px;
-    }
-
-    .dual-connections {
-      display: flex;
-      justify-content: center;
-      gap: 40px;
-      align-items: flex-start;
-    }
-
-
-    .control-layer {
-      margin: 10px 0 20px 0;
-    }
-
-    .grpc-layer {
-      margin-top: 10px;
-    }
-
-    .service-node {
-      padding: 25px 35px;
-      border-radius: 16px;
-      text-align: center;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-      transition: all 0.3s ease;
-      min-width: 280px;
-    }
-
-    .service-node:hover {
-      transform: translateY(-5px) scale(1.02);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.2);
-    }
-
-    .service-node.frontend {
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-      border: 4px solid #1d4ed8;
-    }
-
-    .service-node.control {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-      border: 4px solid #b45309;
-      min-width: 320px;
-    }
-
-    .service-node.sensor {
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      border: 4px solid #15803d;
-    }
-
-    .service-node.light {
-      background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
-      border: 4px solid #be185d;
-    }
-
-    .node-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-    }
-
-    .node-name {
-      font-weight: 700;
-      color: white;
-      font-size: 16px;
-      margin-bottom: 6px;
-    }
-
-    .node-tech {
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.9);
-      margin-bottom: 4px;
-    }
-
-    .node-port {
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.8);
-      font-family: monospace;
-      font-weight: 600;
-    }
-
-    .connection-flow {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      padding: 15px 25px;
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 12px;
-      border: 2px solid #e5e7eb;
-      transition: all 0.3s ease;
-    }
-
-    .connection-flow.active {
-      background: rgba(255, 255, 255, 0.95);
-      border-color: #3b82f6;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
-    .flow-arrow {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .flow-arrow.bidir {
-      gap: 0;
-    }
-
-    .arrow-line {
-      width: 4px;
-      height: 60px;
-      background: #d1d5db;
-      transition: all 0.3s ease;
-      border-radius: 2px;
-    }
-
-    .arrow-line.rest {
-      background: repeating-linear-gradient(
-        180deg,
-        #3b82f6 0px,
-        #3b82f6 10px,
-        transparent 10px,
-        transparent 15px
-      );
-      background-size: 4px 15px;
-      height: 60px;
-    }
-
-    .arrow-line.stream {
-      background: repeating-linear-gradient(
-        180deg,
-        #22c55e 0px,
-        #22c55e 10px,
-        transparent 10px,
-        transparent 15px
-      );
-      background-size: 4px 15px;
-    }
-
-    .arrow-line.websocket {
-      background: repeating-linear-gradient(
-        180deg,
-        #8b5cf6 0px,
-        #8b5cf6 8px,
-        transparent 8px,
-        transparent 12px,
-        #8b5cf6 12px,
-        #8b5cf6 20px,
-        transparent 20px,
-        transparent 24px
-      );
-      background-size: 4px 24px;
-      height: 70px;
-    }
-
-    .arrow-line.bidir {
-      background: repeating-linear-gradient(
-        180deg,
-        #ec4899 0px,
-        #ec4899 8px,
-        transparent 8px,
-        transparent 12px
-      );
-      background-size: 4px 12px;
-      height: 50px;
-    }
-
-    .connection-flow.active .arrow-line.websocket {
-      animation: websocket-flow 0.6s linear infinite;
-    }
-
-    @keyframes websocket-flow {
-      0% { background-position: 0 0; }
-      100% { background-position: 0 24px; }
-    }
-
-    .connection-flow.active .arrow-line {
-      background: #3b82f6;
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
-    }
-
-    .connection-flow.active .arrow-line.rest {
-      animation: rest-flow-down 1s linear infinite;
-    }
-
-    .connection-flow.active .arrow-line.stream {
-      animation: stream-flow-down 1s linear infinite;
-    }
-
-    .arrow-head.rest {
-      color: #3b82f6;
-      font-size: 24px;
-    }
-
-    .arrow-head.websocket {
-      color: #8b5cf6;
-      font-size: 28px;
-    }
-
-    .connection-flow.active .arrow-line.bidir {
-      animation: bidir-flow-vertical 0.8s linear infinite;
-    }
-
-    @keyframes rest-flow-down {
-      0% { background-position: 0 0; }
-      100% { background-position: 0 15px; }
-    }
-
-    @keyframes stream-flow-down {
-      0% { background-position: 0 0; }
-      100% { background-position: 0 15px; }
-    }
-
-    @keyframes bidir-flow-vertical {
-      0% { background-position: 0 0; }
-      100% { background-position: 0 12px; }
-    }
-
-    .connection-flow.active .arrow-head.websocket {
-      color: #7c3aed;
-      animation: pulse-arrow 0.8s infinite;
-    }
-
-    .arrow-head {
-      font-size: 24px;
-      color: #d1d5db;
-      transition: all 0.3s ease;
-      line-height: 1;
-    }
-
-    .arrow-head.stream {
-      color: #22c55e;
-    }
-
-    .arrow-head.up {
-      color: #ec4899;
-      margin-bottom: -5px;
-    }
-
-    .arrow-head.down {
-      color: #ec4899;
-      margin-top: -5px;
-    }
-
-    .connection-flow.active .arrow-head {
-      color: #3b82f6;
-      animation: pulse-arrow 1s infinite;
-    }
-
-    .connection-flow.active .arrow-head.stream {
-      color: #16a34a;
-    }
-
-    .connection-flow.active .arrow-head.up,
-    .connection-flow.active .arrow-head.down {
-      color: #db2777;
-    }
-
-    @keyframes pulse-arrow {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.3); }
-    }
-
-    .flow-label {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 180px;
-    }
-
-    .label-type {
-      font-size: 14px;
-      font-weight: 700;
-      color: #1f2937;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .label-detail {
-      font-size: 12px;
-      color: #6b7280;
-      font-weight: 600;
-    }
-
-    .label-method {
-      font-size: 11px;
-      color: #9ca3af;
-      font-family: 'Courier New', monospace;
-      background: rgba(0, 0, 0, 0.05);
-      padding: 3px 8px;
-      border-radius: 4px;
-      display: inline-block;
-      align-self: flex-start;
-    }
-
-    .rest-label .label-type {
-      color: #2563eb;
-    }
-
-    .websocket-label .label-type {
-      color: #7c3aed;
-    }
-
-    .streaming-label .label-type {
-      color: #16a34a;
-    }
-
-    .bidir-label .label-type {
-      color: #db2777;
-    }
-
-    .grpc-connections {
-      display: flex;
-      gap: 60px;
-      justify-content: center;
-      align-items: flex-start;
-    }
-
-    .grpc-flow {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .communication-stats {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 15px;
-      margin-bottom: 30px;
-    }
-
-    .stat-card {
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-3px);
-    }
-
-    .rest-stat { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
-    .websocket-stat { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; }
-    .stream-stat { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; }
-    .bidir-stat { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: white; }
-    .total-stat { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
-
-    .stat-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    .stat-value {
-      font-size: 36px;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    .stat-label {
-      font-size: 13px;
-      opacity: 0.95;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .stat-route {
-      font-size: 11px;
-      opacity: 0.85;
-      font-family: monospace;
-    }
-
-    .communication-log {
-      margin-top: 20px;
-    }
-
-    .communication-log h3 {
-      margin: 0 0 15px 0;
-      color: #1f2937;
-      font-size: 18px;
-    }
-
-    .log-entries {
-      background: #1f2937;
-      border-radius: 8px;
-      padding: 15px;
-      max-height: 350px;
-      overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-    }
-
-    .log-entry {
-      padding: 10px;
-      margin-bottom: 6px;
-      border-radius: 4px;
-      display: grid;
-      grid-template-columns: 100px 130px 180px 1fr;
-      gap: 12px;
-      align-items: center;
-      transition: background 0.2s ease;
-    }
-
-    .log-entry:hover {
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .log-entry.success { background: rgba(34, 197, 94, 0.15); border-left: 4px solid #22c55e; }
-    .log-entry.error { background: rgba(239, 68, 68, 0.15); border-left: 4px solid #ef4444; }
-    .log-entry.pending { background: rgba(251, 191, 36, 0.15); border-left: 4px solid #fbbf24; }
-
-    .log-time {
-      color: #9ca3af;
-      font-weight: 600;
-    }
-
-    .log-type {
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 10px;
-      text-align: center;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .log-type.rest { background: #3b82f6; color: white; }
-    .log-type.server-stream { background: #22c55e; color: white; }
-    .log-type.bidirectional { background: #ec4899; color: white; }
-
-    .log-service {
-      color: #60a5fa;
-      font-weight: 600;
-    }
-
-    .log-message {
-      color: #d1d5db;
-    }
-
-    .no-logs {
-      text-align: center;
-      color: #9ca3af;
-      padding: 40px;
-      font-style: italic;
-    }
+    .visualizer-container{padding:16px;background:#fff;border-radius:6px;border:1px solid #e5e7eb}
+    h2{margin:0 0 6px;font-size:22px;color:#1f2937;font-weight:600}
+    .subtitle{margin:0 0 18px;font-size:13px;color:#4b5563}
+    .architecture-diagram{display:flex;flex-direction:column;gap:14px;margin-bottom:22px}
+    .layer{display:flex;justify-content:center}
+    .service-node{padding:18px 22px;border-radius:12px;min-width:230px;font-size:13px;color:#fff}
+    .service-node.frontend{background:#2563eb}
+    .service-node.control{background:#d97706}
+    .service-node.sensor{background:#16a34a}
+    .service-node.light{background:#db2777}
+    .node-icon{font-size:34px;margin-bottom:8px}
+    .node-name{font-weight:600;margin-bottom:4px;font-size:15px}
+    .node-tech,.node-port{opacity:.85;font-size:12px}
+    .node-port{font-family:monospace}
+    .dual-connections{display:flex;gap:18px}
+    .connection-flow{display:flex;align-items:center;gap:14px;padding:12px 16px;border:1px solid #d1d5db;border-radius:10px;background:#f9fafb;font-size:12px}
+    .connection-flow.active{border-color:#2563eb}
+    .flow-arrow{display:flex;flex-direction:column;align-items:center}
+    .arrow-line{width:3px;height:42px;background:#d1d5db}
+    .arrow-line.rest{background:#2563eb}
+    .arrow-line.websocket{background:#7c3aed;height:50px}
+    .arrow-line.stream{background:#16a34a}
+    .arrow-line.bidir{background:#db2777;height:36px}
+    .arrow-head{font-size:15px;color:inherit}
+    .flow-label{display:flex;flex-direction:column;gap:3px}
+    .label-type{font-weight:600;font-size:13px}
+    .label-detail{font-size:12px;color:#374151}
+    .label-method{font-family:monospace;font-size:12px;color:#374151}
+    .grpc-connections{display:flex;gap:26px}
+    .grpc-flow{display:flex;flex-direction:column;align-items:center;gap:12px}
+    .communication-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+    .stat-card{padding:14px;border-radius:8px;font-size:12px;color:#fff}
+    .rest-stat{background:#2563eb}.websocket-stat{background:#7c3aed}.stream-stat{background:#16a34a}.bidir-stat{background:#db2777}.total-stat{background:#d97706}
+    .stat-icon{font-size:22px;margin-bottom:6px}
+    .stat-value{font-size:22px;font-weight:600}
+    .stat-label{font-size:12px}
+    .stat-route{font-size:12px;font-family:monospace}
+    .log-entries{background:#111827;border-radius:8px;padding:12px;max-height:300px;overflow:auto;font-family:monospace;font-size:12px}
+    .log-entry{display:grid;grid-template-columns:85px 78px 150px 1fr;gap:8px;padding:8px;border-radius:6px;margin-bottom:6px;border-left:4px solid transparent;background:#1f2937}
+    .log-entry.success{border-color:#16a34a;background:#1f2937}
+    .log-entry.error{border-color:#dc2626;background:#1f2937}
+    .log-entry.pending{border-color:#ca8a04;background:#1f2937}
+    .log-entry:hover{filter:brightness(1.15)}
+    .log-time{color:#9ca3af;font-weight:600}
+    .log-type{padding:3px 6px;border-radius:4px;font-size:10px;font-weight:600;text-align:center;letter-spacing:.5px}
+    .log-type.rest{background:#2563eb;color:#fff}.log-type.server-stream{background:#16a34a;color:#fff}.log-type.bidirectional{background:#db2777;color:#fff}
+    .log-service{color:#60a5fa;font-weight:600}
+    .log-message{color:#e5e7eb;line-height:1.3;word-break:break-word}
+    .no-logs{text-align:center;color:#9ca3af;padding:24px;font-style:italic}
+    .legend,.details-block{font-size:12px;margin-top:10px}
+    .legend-title{font-weight:600;margin-bottom:4px;text-transform:uppercase;font-size:12px;color:#374151}
+    .legend-items{display:flex;flex-wrap:wrap;gap:10px}
+    .legend-item{display:flex;align-items:center;gap:6px;font-size:12px}
+    .legend-swatch{width:16px;height:7px;border-radius:3px}
+    .legend-swatch.rest{background:#2563eb}.legend-swatch.websocket{background:#7c3aed}.legend-swatch.stream{background:#16a34a}.legend-swatch.bidir{background:#db2777}.legend-swatch.optional{background:#9ca3af}
+    .node-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+    .badge{background:rgba(255,255,255,.25);padding:3px 7px;border-radius:10px;font-size:10px;font-weight:600}
+    .badge-outline{background:rgba(0,0,0,.25)}
   `]
 })
 export class CommunicationVisualizerComponent implements OnInit, OnDestroy {
@@ -739,4 +351,3 @@ export class CommunicationVisualizerComponent implements OnInit, OnDestroy {
     }
   }
 }
-

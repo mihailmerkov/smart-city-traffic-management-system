@@ -55,3 +55,114 @@ body {
 .mb-2 { margin-bottom: 1rem; }
 .mb-3 { margin-bottom: 1.5rem; }
 
+/* Communication Visualizer shared styles moved from component to reduce per-component CSS budget */
+.node-badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; justify-content:center; }
+.badge { background:rgba(0,0,0,0.15); color:#fff; padding:4px 8px; border-radius:12px; font-size:10px; font-weight:600; letter-spacing:0.5px; backdrop-filter:blur(2px); }
+.badge-outline { border:1px solid rgba(255,255,255,0.6); background:rgba(255,255,255,0.05); }
+.badge-secondary { background:rgba(0,0,0,0.35); }
+
+.legend { margin-top:25px; background:#fff; border:2px solid #d1d5db; border-radius:12px; padding:12px 18px; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+.legend-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#374151; margin-bottom:10px; }
+.legend-items { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+.legend-item { display:flex; align-items:center; gap:8px; font-size:11px; color:#4b5563; }
+.legend-swatch { width:18px; height:8px; border-radius:4px; box-shadow:0 0 0 1px rgba(0,0,0,0.1); }
+.legend-swatch.rest { background:#2563eb; }
+.legend-swatch.websocket { background:#7c3aed; }
+.legend-swatch.stream { background:#16a34a; }
+.legend-swatch.bidir { background:#db2777; }
+.legend-swatch.optional { background: repeating-linear-gradient(45deg,#9ca3af 0,#9ca3af 4px,#e5e7eb 4px,#e5e7eb 8px); }
+
+.details-block { margin-top:18px; background:#f9fafb; border:1px solid #d1d5db; border-radius:10px; padding:10px 14px; font-size:12px; }
+.details-block summary { cursor:pointer; font-weight:600; color:#1f2937; margin-bottom:6px; }
+.details-block ul { margin:6px 0 0 18px; padding:0; list-style:disc; }
+.details-block li { margin-bottom:4px; line-height:1.3; }
+
+/* Animated flow enhancements (global) - arrows only */
+.connection-flow.active .arrow-line.rest,
+.connection-flow.active .arrow-line.stream,
+.connection-flow.active .arrow-line.websocket,
+.connection-flow.active .arrow-line.bidir {
+  position:relative;
+  width: 4px;
+  transition: all 0.3s ease;
+}
+
+.connection-flow.active .arrow-line.rest {
+  background:linear-gradient(180deg,#1e40af 0%,#3b82f6 30%,#60a5fa 50%,#3b82f6 70%,#1e40af 100%);
+  background-size:100% 300%;
+  animation:flow-down 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(59,130,246,0.5);
+}
+.connection-flow.active .arrow-line.stream {
+  background:linear-gradient(180deg,#15803d 0%,#16a34a 30%,#4ade80 50%,#16a34a 70%,#15803d 100%);
+  background-size:100% 300%;
+  animation:flow-down 2.2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(22,163,74,0.5);
+}
+.connection-flow.active .arrow-line.websocket {
+  background:linear-gradient(180deg,#6d28d9 0%,#7c3aed 30%,#a78bfa 50%,#7c3aed 70%,#6d28d9 100%);
+  background-size:100% 300%;
+  animation:flow-down 2.1s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(124,58,237,0.5);
+}
+.connection-flow.active .arrow-line.bidir {
+  background:linear-gradient(180deg,#be185d 0%,#db2777 30%,#fb7185 50%,#db2777 70%,#be185d 100%);
+  background-size:100% 300%;
+  animation:flow-down 2.3s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(219,39,119,0.5);
+}
+
+/* Arrow head pulse */
+.connection-flow.active .arrow-head {
+  animation:pulse 1.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 3px currentColor);
+}
+.connection-flow.active .arrow-head.up {
+  animation:pulse-up 1.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 3px currentColor);
+}
+.connection-flow.active .arrow-head.down {
+  animation:pulse-down 1.5s ease-in-out infinite 0.75s;
+  filter:drop-shadow(0 0 3px currentColor);
+}
+
+@keyframes flow-down {
+  0%{background-position:0 0}
+  100%{background-position:0 100%}
+}
+
+@keyframes pulse {
+  0%,100%{transform:scale(1); opacity:0.9}
+  50%{transform:scale(1.15); opacity:1}
+}
+
+@keyframes pulse-up {
+  0%,100%{transform:scale(1) translateY(0); opacity:0.9}
+  50%{transform:scale(1.15) translateY(-2px); opacity:1}
+}
+
+@keyframes pulse-down {
+  0%,100%{transform:scale(1) translateY(0); opacity:0.9}
+  50%{transform:scale(1.15) translateY(2px); opacity:1}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connection-flow.active .arrow-line.rest,
+  .connection-flow.active .arrow-line.stream,
+  .connection-flow.active .arrow-line.websocket,
+  .connection-flow.active .arrow-line.bidir,
+  .connection-flow.active .arrow-head { animation:none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connection-flow.active .arrow-line.rest,
+  .connection-flow.active .arrow-line.stream,
+  .connection-flow.active .arrow-line.websocket,
+  .connection-flow.active .arrow-line.bidir,
+  .connection-flow.active .arrow-head { animation:none; }
+  .connection-flow.active .arrow-line.rest::after,
+  .connection-flow.active .arrow-line.stream::after,
+  .connection-flow.active .arrow-line.websocket::after,
+  .connection-flow.active .arrow-line.bidir::before,
+  .connection-flow.active .arrow-line.bidir::after { display:none; }
+}
