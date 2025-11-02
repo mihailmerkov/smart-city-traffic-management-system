@@ -1,4 +1,5 @@
-import {Injectable} from '@angular/core';
+import {Injectable, PLATFORM_ID, Inject} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
 import {Observable, Subject} from 'rxjs';
 import {IntersectionStats, TrafficApiService} from './traffic-api.service';
 
@@ -26,15 +27,30 @@ export class RealtimeDataService {
   private webSocket: WebSocket | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
+  private isBrowser: boolean;
 
   communicationLogs$ = this.communicationLogs.asObservable();
   intersectionUpdates$ = this.intersectionUpdates.asObservable();
 
-  constructor(private apiService: TrafficApiService) {
-    this.connectWebSocket();
+  constructor(
+    private apiService: TrafficApiService,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+
+    // Only connect WebSocket in browser environment, not during SSR
+    if (this.isBrowser) {
+      this.connectWebSocket();
+    }
   }
 
   private connectWebSocket(): void {
+    // Skip WebSocket connection if not in browser (SSR environment)
+    if (!this.isBrowser) {
+      console.log('Skipping WebSocket connection during SSR');
+      return;
+    }
+
     try {
       // Connect to Traffic Control WebSocket endpoint
       this.webSocket = new WebSocket('ws://localhost:8001/ws/traffic');

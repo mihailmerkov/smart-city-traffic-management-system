@@ -1,6 +1,16 @@
-version: '3.8'
+#
+# Smart City Traffic Management System - Docker Compose Configuration
+# Author: Mihail Merkov (https://github.com/mihailmerkov)
+#
+# This compose file orchestrates all microservices with proper dependencies,
+# health checks, and networking configuration.
+#
 
 services:
+  # ============================================================================
+  # Sensor Control Service - IoT Sensor Data Provider
+  # Provides real-time sensor data via gRPC Server Streaming
+  # ============================================================================
   sensor-control-service:
     build:
       context: ./sensor-control-service
@@ -10,38 +20,47 @@ services:
       - "8002:8002"
     environment:
       - QUARKUS_HTTP_PORT=8002
-      - QUARKUS_GRPC_SERVER_PORT=9002
       - QUARKUS_LOG_LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY_COM_MIHAILMERKOV_SCTMS_SENSOR_LEVEL=DEBUG
     networks:
       - traffic-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/q/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "sh", "-c", "nc -z localhost 8002 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
 
+  # ============================================================================
+  # Traffic Light Service - Traffic Light Controller
+  # Manages traffic light phases via gRPC Bidirectional Streaming
+  # ============================================================================
   traffic-light-service:
     build:
       context: ./traffic-light-service
       dockerfile: Dockerfile
     container_name: traffic-light-service
     ports:
-      - "8002:8002"
-      - "9003:9003"
+      - "8003:8003"
     environment:
-      - QUARKUS_HTTP_PORT=8002
-      - QUARKUS_GRPC_SERVER_PORT=9003
+      - QUARKUS_HTTP_PORT=8003
       - QUARKUS_LOG_LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY_COM_MIHAILMERKOV_SCTMS_LIGHT_LEVEL=DEBUG
     networks:
       - traffic-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/q/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "sh", "-c", "nc -z localhost 8003 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
 
+  # ============================================================================
+  # Traffic Control Service - Central Orchestrator
+  # Coordinates all services via gRPC, REST, and WebSocket
+  # ============================================================================
   traffic-control-service:
     build:
       context: ./traffic-control-service
@@ -49,28 +68,79 @@ services:
     container_name: traffic-control-service
     ports:
       - "8001:8001"
-      - "9001:9001"
     environment:
       - QUARKUS_HTTP_PORT=8001
-      - QUARKUS_GRPC_SERVER_PORT=9001
       - QUARKUS_GRPC_CLIENTS_SENSOR_SERVICE_HOST=sensor-control-service
-      - QUARKUS_GRPC_CLIENTS_SENSOR_SERVICE_PORT=9002
+      - QUARKUS_GRPC_CLIENTS_SENSOR_SERVICE_PORT=8002
       - QUARKUS_GRPC_CLIENTS_TRAFFIC_LIGHT_SERVICE_HOST=traffic-light-service
-      - QUARKUS_GRPC_CLIENTS_TRAFFIC_LIGHT_SERVICE_PORT=9003
+      - QUARKUS_GRPC_CLIENTS_TRAFFIC_LIGHT_SERVICE_PORT=8003
+      - QUARKUS_HTTP_CORS_ORIGINS=http://localhost:4200,http://frontend-service:4200
       - QUARKUS_LOG_LEVEL=INFO
     depends_on:
-      - sensor-control-service
-      - traffic-light-service
+      sensor-control-service:
+        condition: service_healthy
+      traffic-light-service:
+        condition: service_healthy
     networks:
       - traffic-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/q/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "sh", "-c", "nc -z localhost 8001 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
 
+  # ============================================================================
+  # Frontend Service - Angular 19 Web Application with SSR
+  # Provides the user interface with real-time visualization
+  # ============================================================================
+  frontend-service:
+    build:
+      context: ./frontend-service
+      dockerfile: Dockerfile
+    container_name: frontend-service
+    ports:
+      - "4200:4200"
+    environment:
+      - NODE_ENV=production
+      - PORT=4200
+      - API_BASE_URL=http://traffic-control-service:8001
+    depends_on:
+      traffic-control-service:
+        condition: service_healthy
+    networks:
+      - traffic-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+# ============================================================================
+# Networks
+# ============================================================================
 networks:
   traffic-network:
     driver: bridge
+    name: smart-city-traffic-network
+
+# ============================================================================
+# Usage Instructions:
+# ============================================================================
+# Start all services:           docker-compose up -d
+# View logs:                    docker-compose logs -f
+# Stop all services:            docker-compose down
+# Rebuild and start:            docker-compose up --build
+# Stop and remove volumes:      docker-compose down -v
+#
+# Access points:
+# - Frontend:              http://localhost:4200
+# - Traffic Control API:   http://localhost:8001/api/traffic/intersections
+# - Sensor Service:        http://localhost:8002/q/health
+# - Traffic Light Service: http://localhost:8003/q/health
+# ============================================================================
+
 

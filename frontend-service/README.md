@@ -70,9 +70,78 @@ npm run serve:ssr:frontend-service
 ```
 The SSR server will be available at `http://localhost:4000`
 
-### Development with specific port
+## Docker Deployment
+
+### Using Docker (Standalone)
 ```bash
-ng serve --port 4200
+# Build optimized Docker image with multi-stage build
+docker build -t frontend-service:latest .
+
+# Run container
+docker run -d \
+  --name frontend-service \
+  -p 4200:4200 \
+  -e NODE_ENV=production \
+  -e API_BASE_URL=http://localhost:8001 \
+  frontend-service:latest
+
+# View logs
+docker logs -f frontend-service
+
+# Stop container
+docker stop frontend-service
+```
+
+### Using Docker Compose (Recommended)
+The service is included in the root `docker-compose.yml` for full system orchestration:
+
+```bash
+# From the project root directory
+docker-compose up -d
+
+# View logs for this service
+docker-compose logs -f frontend-service
+
+# Stop all services
+docker-compose down
+```
+
+### Docker Image Features
+- **Multi-stage build**: Optimized image size (~250MB)
+- **Security**: Runs as non-root user
+- **Health checks**: Built-in health monitoring
+- **SSR enabled**: Server-Side Rendering for better SEO and performance
+- **Production optimized**: Minified bundles and tree-shaking
+- **Alpine Linux**: Minimal base image
+
+### Docker Environment Variables
+- `NODE_ENV` - Node environment (default: production)
+- `PORT` - Application port (default: 4200)
+- `API_BASE_URL` - Backend API URL (default: http://traffic-control-service:8001)
+
+## Development
+```bash
+# Run tests
+npm test
+
+# Run tests with coverage
+npm test -- --code-coverage
+
+# Build for production
+npm run build
+
+# Watch mode for development
+npm run watch
+```
+
+## Building for Production
+```bash
+# Build with SSR
+npm run build
+
+# The output will be in dist/frontend-service/
+# - browser/  - Client-side assets
+# - server/   - Server-side rendering bundle
 ```
 
 ## Testing the Application

@@ -9,7 +9,7 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
   imports: [CommonModule],
   template: `
     <div class="visualizer-container">
-      <h2>🔄 gRPC Communication Architecture</h2>
+      <h2>🔄 Communication Architecture</h2>
       <p class="subtitle">Real-time microservices communication flow</p>
 
       <div class="architecture-diagram">

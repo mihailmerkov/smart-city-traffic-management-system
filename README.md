@@ -801,69 +801,266 @@ Then attach debugger to port 5005.
 
 ## 🐳 Docker Deployment
 
-### Using Docker Compose (Recommended)
+### Complete System with Docker Compose (Recommended)
+
+The entire Smart City Traffic Management System can be deployed with a single command using Docker Compose. The configuration includes:
+
+- **4 Microservices**: All services containerized and orchestrated
+- **Health Checks**: Automatic health monitoring for all services
+- **Service Dependencies**: Proper startup order with health-based dependencies
+- **Resource Limits**: CPU and memory constraints for stable operation
+- **Network Isolation**: Dedicated Docker network for inter-service communication
+- **Auto-restart**: Services automatically restart on failure
+
+#### Quick Start with Docker Compose
 
 ```bash
+# Clone the repository
+git clone https://github.com/mihailmerkov/smart-city-traffic-management-system.git
+cd smart-city-traffic-management-system
+
 # Build and start all services
 docker-compose up --build
 
-# Start in detached mode
-docker-compose up -d
+# Or start in detached mode (background)
+docker-compose up -d --build
 
-# View logs
+# View logs from all services
 docker-compose logs -f
+
+# View logs from specific service
+docker-compose logs -f traffic-control-service
+
+# Check service status
+docker-compose ps
 
 # Stop all services
 docker-compose down
 
-# Stop and remove volumes
+# Stop and remove all data
 docker-compose down -v
 ```
 
+#### Docker Compose Features
+
+**Service Health Checks:**
+All services include health monitoring:
+```yaml
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:PORT/q/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+```
+
+**Dependency Management:**
+Services start in the correct order:
+1. Sensor Control Service (port 8002) - waits until healthy
+2. Traffic Light Service (port 8003) - waits until healthy
+3. Traffic Control Service (port 8001) - waits for sensors and lights
+4. Frontend Service (port 4200) - waits for traffic control
+
+**Resource Allocation:**
+Each service has CPU and memory limits:
+- Backend Services: 512MB RAM, 1 CPU core
+- Traffic Control: 768MB RAM, 1.5 CPU cores
+- Frontend: 512MB RAM, 1 CPU core
+
 ### Individual Service Docker Build
+
+Each service can also be built and run independently:
+
+#### Backend Services (Quarkus)
 
 ```bash
 # Build backend service
 cd <service-name>
-docker build -f src/main/docker/Dockerfile.jvm -t <service-name> .
-docker run -p <port>:<port> <service-name>
+docker build -t <service-name>:latest .
 
-# Build frontend service
-cd frontend-service
-docker build -t frontend-service .
-docker run -p 4200:4200 frontend-service
+# Run with environment variables
+docker run -d \
+  --name <service-name> \
+  -p <port>:<port> \
+  -e QUARKUS_LOG_LEVEL=INFO \
+  <service-name>:latest
 ```
 
-### Docker Compose Configuration
+**Example - Sensor Control Service:**
+```bash
+cd sensor-control-service
+docker build -t sensor-control-service:latest .
+docker run -d --name sensor-service -p 8002:8002 sensor-control-service:latest
+```
 
-The `docker-compose.yml` orchestrates all services:
+#### Frontend Service (Angular + SSR)
+
+```bash
+cd frontend-service
+docker build -t frontend-service:latest .
+docker run -d \
+  --name frontend \
+  -p 4200:4200 \
+  -e NODE_ENV=production \
+  -e API_BASE_URL=http://localhost:8001 \
+  frontend-service:latest
+```
+
+### Docker Image Details
+
+All Docker images are built using multi-stage builds for optimal size and security:
+
+#### Backend Services (Quarkus)
+**Image Size:** ~200MB (Alpine-based)
+
+**Build Stages:**
+1. **Build Stage**: Maven compilation with dependency caching
+2. **Runtime Stage**: Minimal JRE with application artifacts
+
+**Security Features:**
+- Non-root user execution
+- Minimal Alpine Linux base
+- No development tools in final image
+- Health check endpoints
+
+**Environment Variables:**
+- `QUARKUS_HTTP_PORT` - HTTP/gRPC port
+- `QUARKUS_LOG_LEVEL` - Logging level (INFO, DEBUG, TRACE)
+- `QUARKUS_GRPC_CLIENTS_*` - gRPC client configuration
+- `JAVA_OPTS` - JVM options
+
+#### Frontend Service (Angular)
+**Image Size:** ~250MB (Node Alpine-based)
+
+**Build Stages:**
+1. **Build Stage**: Angular compilation with SSR
+2. **Runtime Stage**: Node.js server with compiled assets
+
+**Security Features:**
+- Non-root user execution
+- Production-only dependencies
+- Minimal Alpine Linux base
+- Health check endpoint
+
+**Environment Variables:**
+- `NODE_ENV` - Node environment
+- `PORT` - Application port
+- `API_BASE_URL` - Backend API URL
+
+### Docker Network Configuration
+
+The `docker-compose.yml` creates a dedicated bridge network:
 
 ```yaml
-services:
-  sensor-service:
-    build: ./sensor-control-service
-    ports:
-      - "8002:8002"
-    
-  traffic-light-service:
-    build: ./traffic-light-service
-    ports:
-      - "8003:8003"
-    
-  traffic-control-service:
-    build: ./traffic-control-service
-    ports:
-      - "8001:8001"
-    depends_on:
-      - sensor-service
-      - traffic-light-service
-    
-  frontend-service:
-    build: ./frontend-service
-    ports:
-      - "4200:4200"
-    depends_on:
-      - traffic-control-service
+networks:
+  traffic-network:
+    driver: bridge
+    name: smart-city-traffic-network
+```
+
+**Network Benefits:**
+- Service discovery by container name
+- Isolated from other Docker networks
+- Automatic DNS resolution
+- Secure inter-service communication
+
+### Production Deployment Tips
+
+1. **Environment Variables**: Use `.env` file for configuration
+   ```bash
+   # Create .env file
+   cat > .env << EOF
+   QUARKUS_LOG_LEVEL=INFO
+   NODE_ENV=production
+   EOF
+   
+   # Start with env file
+   docker-compose --env-file .env up -d
+   ```
+
+2. **Volume Mounts**: Add persistent storage if needed
+   ```yaml
+   volumes:
+     - ./logs:/deployments/logs
+   ```
+
+3. **Port Mapping**: Change ports for production
+   ```yaml
+   ports:
+     - "80:4200"  # Map to port 80
+   ```
+
+4. **Scaling**: Scale services horizontally
+   ```bash
+   docker-compose up -d --scale sensor-control-service=3
+   ```
+
+5. **Monitoring**: Use Docker stats
+   ```bash
+   docker stats
+   docker-compose logs -f --tail=100
+   ```
+
+### Troubleshooting Docker Deployment
+
+**Service won't start:**
+```bash
+# Check service logs
+docker-compose logs <service-name>
+
+# Check health status
+docker-compose ps
+
+# Restart specific service
+docker-compose restart <service-name>
+```
+
+**Network issues:**
+```bash
+# Verify network exists
+docker network ls | grep traffic
+
+# Inspect network
+docker network inspect smart-city-traffic-network
+
+# Recreate network
+docker-compose down && docker-compose up
+```
+
+**Port conflicts:**
+```bash
+# Check what's using the port
+lsof -i :8001
+
+# Change port in docker-compose.yml
+ports:
+  - "8101:8001"  # Map to different host port
+```
+
+### Docker Image Optimization
+
+All Dockerfiles include:
+- **Layer caching**: Dependencies downloaded before source copy
+- **Multi-stage builds**: Separate build and runtime stages
+- **`.dockerignore`**: Excludes unnecessary files
+- **Minimal base images**: Alpine Linux for small size
+- **Health checks**: Built-in monitoring
+- **Security**: Non-root user execution
+
+### Clean Up
+
+```bash
+# Stop and remove containers
+docker-compose down
+
+# Remove containers and volumes
+docker-compose down -v
+
+# Remove all images
+docker-compose down --rmi all
+
+# Complete cleanup
+docker system prune -a --volumes
 ```
 
 ---

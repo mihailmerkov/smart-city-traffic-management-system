@@ -58,14 +58,52 @@ cd traffic-light-service
 java -jar target/quarkus-app/quarkus-run.jar
 ```
 
-### Using Docker
+## Docker Deployment
+
+### Using Docker (Standalone)
 ```bash
-# Build Docker image
-docker build -f src/main/docker/Dockerfile.jvm -t traffic-light-service .
+# Build optimized Docker image with multi-stage build
+docker build -t traffic-light-service:latest .
 
 # Run container
-docker run -p 8003:8003 traffic-light-service
+docker run -d \
+  --name traffic-light-service \
+  -p 8003:8003 \
+  -e QUARKUS_LOG_LEVEL=INFO \
+  traffic-light-service:latest
+
+# View logs
+docker logs -f traffic-light-service
+
+# Stop container
+docker stop traffic-light-service
 ```
+
+### Using Docker Compose (Recommended)
+The service is included in the root `docker-compose.yml` for full system orchestration:
+
+```bash
+# From the project root directory
+docker-compose up -d
+
+# View logs for this service
+docker-compose logs -f traffic-light-service
+
+# Stop all services
+docker-compose down
+```
+
+### Docker Image Features
+- **Multi-stage build**: Optimized image size (~200MB)
+- **Security**: Runs as non-root user
+- **Health checks**: Built-in health monitoring
+- **Caching**: Efficient layer caching for faster rebuilds
+- **Alpine Linux**: Minimal base image
+
+### Docker Environment Variables
+- `QUARKUS_HTTP_PORT` - HTTP/gRPC port (default: 8003)
+- `QUARKUS_LOG_LEVEL` - Logging level (default: INFO)
+- `QUARKUS_LOG_CATEGORY_COM_MIHAILMERKOV_SCTMS_LIGHT_LEVEL` - Service-specific logging
 
 ## Testing the Service
 Once started, the service will be available at:

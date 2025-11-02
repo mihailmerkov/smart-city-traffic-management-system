@@ -57,14 +57,52 @@ cd sensor-control-service
 java -jar target/quarkus-app/quarkus-run.jar
 ```
 
-### Using Docker
+## Docker Deployment
+
+### Using Docker (Standalone)
 ```bash
-# Build Docker image
-docker build -f src/main/docker/Dockerfile.jvm -t sensor-control-service .
+# Build optimized Docker image with multi-stage build
+docker build -t sensor-control-service:latest .
 
 # Run container
-docker run -p 8002:8002 sensor-control-service
+docker run -d \
+  --name sensor-control-service \
+  -p 8002:8002 \
+  -e QUARKUS_LOG_LEVEL=INFO \
+  sensor-control-service:latest
+
+# View logs
+docker logs -f sensor-control-service
+
+# Stop container
+docker stop sensor-control-service
 ```
+
+### Using Docker Compose (Recommended)
+The service is included in the root `docker-compose.yml` for full system orchestration:
+
+```bash
+# From the project root directory
+docker-compose up -d
+
+# View logs for this service
+docker-compose logs -f sensor-control-service
+
+# Stop all services
+docker-compose down
+```
+
+### Docker Image Features
+- **Multi-stage build**: Optimized image size (~200MB)
+- **Security**: Runs as non-root user
+- **Health checks**: Built-in health monitoring
+- **Caching**: Efficient layer caching for faster rebuilds
+- **Alpine Linux**: Minimal base image
+
+### Docker Environment Variables
+- `QUARKUS_HTTP_PORT` - HTTP/gRPC port (default: 8002)
+- `QUARKUS_LOG_LEVEL` - Logging level (default: INFO)
+- `QUARKUS_LOG_CATEGORY_COM_MIHAILMERKOV_SCTMS_SENSOR_LEVEL` - Service-specific logging
 
 ## Testing the Service
 Once started, the service will be available at:

@@ -1,11 +1,9 @@
-import {Component, OnDestroy, OnInit, PLATFORM_ID, Inject} from '@angular/core';
+import {Component, OnDestroy, AfterViewInit, PLATFORM_ID, Inject} from '@angular/core';
 import {CommonModule, isPlatformBrowser} from '@angular/common';
 import {Subject, takeUntil} from 'rxjs';
 import {RealtimeDataService} from '../../services/realtime-data.service';
 import {IntersectionStats} from '../../services/traffic-api.service';
-
-// Lazy load Leaflet only on browser
-let L: any;
+import * as L from 'leaflet';
 
 interface IntersectionMarker {
   id: string;
@@ -89,7 +87,7 @@ interface IntersectionMarker {
     }
   `]
 })
-export class CityMapComponent implements OnInit, OnDestroy {
+export class CityMapComponent implements AfterViewInit, OnDestroy {
   private map: any;
   private destroy$ = new Subject<void>();
   private intersections: Map<string, IntersectionMarker> = new Map();
@@ -113,13 +111,14 @@ export class CityMapComponent implements OnInit, OnDestroy {
     this.isBrowser = isPlatformBrowser(platformId);
   }
 
-  async ngOnInit(): Promise<void> {
+  async ngAfterViewInit(): Promise<void> {
     if (this.isBrowser) {
-      // Dynamically import Leaflet only in the browser
-      L = await import('leaflet');
-      this.initMap();
-      this.createIntersectionMarkers();
-      this.subscribeToUpdates();
+      // Wait a tick to ensure DOM is fully ready
+      setTimeout(() => {
+        this.initMap();
+        this.createIntersectionMarkers();
+        this.subscribeToUpdates();
+      }, 100);
     }
   }
 
@@ -268,4 +267,3 @@ export class CityMapComponent implements OnInit, OnDestroy {
     this.realtimeService.getIntersectionById(id).subscribe();
   }
 }
-

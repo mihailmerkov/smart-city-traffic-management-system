@@ -69,14 +69,60 @@ cd traffic-control-service
 java -jar target/quarkus-app/quarkus-run.jar
 ```
 
-### Using Docker
-```bash
-# Build Docker image
-docker build -f src/main/docker/Dockerfile.jvm -t traffic-control-service .
+## Docker Deployment
 
-# Run container
-docker run -p 8001:8001 traffic-control-service
+### Using Docker (Standalone)
+```bash
+# Build optimized Docker image with multi-stage build
+docker build -t traffic-control-service:latest .
+
+# Run container (requires other services to be running)
+docker run -d \
+  --name traffic-control-service \
+  -p 8001:8001 \
+  -e QUARKUS_GRPC_CLIENTS_SENSOR_SERVICE_HOST=sensor-control-service \
+  -e QUARKUS_GRPC_CLIENTS_SENSOR_SERVICE_PORT=8002 \
+  -e QUARKUS_GRPC_CLIENTS_TRAFFIC_LIGHT_SERVICE_HOST=traffic-light-service \
+  -e QUARKUS_GRPC_CLIENTS_TRAFFIC_LIGHT_SERVICE_PORT=8003 \
+  traffic-control-service:latest
+
+# View logs
+docker logs -f traffic-control-service
+
+# Stop container
+docker stop traffic-control-service
 ```
+
+### Using Docker Compose (Recommended)
+The service is included in the root `docker-compose.yml` for full system orchestration:
+
+```bash
+# From the project root directory
+docker-compose up -d
+
+# View logs for this service
+docker-compose logs -f traffic-control-service
+
+# Stop all services
+docker-compose down
+```
+
+### Docker Image Features
+- **Multi-stage build**: Optimized image size (~200MB)
+- **Security**: Runs as non-root user
+- **Health checks**: Built-in health monitoring
+- **Caching**: Efficient layer caching for faster rebuilds
+- **Alpine Linux**: Minimal base image
+- **Service discovery**: Automatic connection to other services in Docker network
+
+### Docker Environment Variables
+- `QUARKUS_HTTP_PORT` - HTTP/WebSocket port (default: 8001)
+- `QUARKUS_GRPC_CLIENTS_SENSOR_SERVICE_HOST` - Sensor service hostname
+- `QUARKUS_GRPC_CLIENTS_SENSOR_SERVICE_PORT` - Sensor service port
+- `QUARKUS_GRPC_CLIENTS_TRAFFIC_LIGHT_SERVICE_HOST` - Traffic light service hostname
+- `QUARKUS_GRPC_CLIENTS_TRAFFIC_LIGHT_SERVICE_PORT` - Traffic light service port
+- `QUARKUS_HTTP_CORS_ORIGINS` - CORS allowed origins
+- `QUARKUS_LOG_LEVEL` - Logging level (default: INFO)
 
 ## Testing the Service
 Once started, the service will be available at:
