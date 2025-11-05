@@ -24,6 +24,21 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
               <span class="badge" title="REST snapshot requests">REST</span>
               <span class="badge" title="WebSocket merged updates">WS</span>
             </div>
+            <details class="service-details">
+              <summary>Service Details</summary>
+              <div class="service-description">
+                <p><strong>Overview:</strong> The Frontend Service is a modern web application built with Angular 19 that provides a real-time visualization dashboard for the Smart City Traffic Management System. It displays live traffic data, intersection maps, communication flow between microservices, and comprehensive statistics.</p>
+                <p><strong>Architecture Role:</strong> This service acts as the user interface in the system, providing:</p>
+                <ul>
+                  <li>Real-time traffic visualization dashboard</li>
+                  <li>Interactive city map with intersection markers</li>
+                  <li>Communication flow visualizer showing gRPC architecture</li>
+                  <li>Statistics dashboard with live metrics</li>
+                  <li>WebSocket connection to Traffic Control Service</li>
+                  <li>REST API consumption for on-demand data</li>
+                </ul>
+              </div>
+            </details>
           </div>
         </div>
 
@@ -70,6 +85,19 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
               <span class="badge badge-secondary" title="Optimization / coordination logic">OPT</span>
               <span class="badge badge-outline" title="Optional gRPC server (not used by Frontend)">gRPC Srv *</span>
             </div>
+            <details class="service-details">
+              <summary>Service Details</summary>
+              <div class="service-description">
+                <p><strong>Overview:</strong> The Traffic Control Service is the central orchestrator microservice that coordinates all traffic management operations. It acts as a gRPC client to both Sensor and Traffic Light services, aggregates data, and exposes REST APIs and WebSocket endpoints for the frontend application.</p>
+                <p><strong>Architecture Role:</strong> This service acts as the orchestrator in the system, serving as:</p>
+                <ul>
+                  <li>gRPC client consuming streams from Sensor Service (Server Streaming)</li>
+                  <li>gRPC client coordinating with Traffic Light Service (Bidirectional Streaming)</li>
+                  <li>REST API provider for the frontend</li>
+                  <li>WebSocket server for real-time data streaming to the frontend</li>
+                </ul>
+              </div>
+            </details>
           </div>
         </div>
 
@@ -99,6 +127,13 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
                   <span class="badge" title="Speed & conditions">SPD</span>
                   <span class="badge" title="Incident detection">INC</span>
                 </div>
+                <details class="service-details">
+                  <summary>Service Details</summary>
+                  <div class="service-description">
+                    <p><strong>Overview:</strong> The Sensor Control Service is a gRPC microservice responsible for simulating and streaming real-time traffic sensor data. It continuously generates vehicle count, speed, road conditions, and incident detection data for multiple intersections in the smart city traffic management system.</p>
+                    <p><strong>Architecture Role:</strong> This service acts as a data provider in the system, streaming sensor readings to the Traffic Control Service using gRPC Server Streaming. It simulates IoT sensors deployed at traffic intersections.</p>
+                  </div>
+                </details>
               </div>
             </div>
 
@@ -126,6 +161,13 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
                   <span class="badge" title="Adaptive timing">ADAPT</span>
                   <span class="badge" title="Receives optimization commands">CMD</span>
                 </div>
+                <details class="service-details">
+                  <summary>Service Details</summary>
+                  <div class="service-description">
+                    <p><strong>Overview:</strong> The Traffic Light Service is a gRPC microservice responsible for managing traffic light phases and responding to coordination commands. It implements a bidirectional streaming gRPC interface to receive commands from the Traffic Control Service and send back phase status updates in real-time.</p>
+                    <p><strong>Architecture Role:</strong> This service acts as a traffic light controller in the system, receiving optimization commands from the Traffic Control Service via gRPC Bidirectional Streaming and managing traffic light phases (RED, GREEN, YELLOW) for multiple intersections.</p>
+                  </div>
+                </details>
               </div>
             </div>
           </div>
@@ -268,6 +310,18 @@ import {CommunicationLog, RealtimeDataService} from '../../services/realtime-dat
     .node-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
     .badge{background:rgba(255,255,255,.25);padding:3px 7px;border-radius:10px;font-size:10px;font-weight:600}
     .badge-outline{background:rgba(0,0,0,.25)}
+    .service-details{margin-top:12px;color:#fff}
+    .service-details summary{cursor:pointer;font-weight:600;font-size:12px;padding:6px 10px;background:rgba(0,0,0,.2);border-radius:6px;list-style:none;user-select:none;transition:background .2s}
+    .service-details summary:hover{background:rgba(0,0,0,.3)}
+    .service-details summary::-webkit-details-marker{display:none}
+    .service-details summary::before{content:'▶ ';display:inline-block;margin-right:4px;transition:transform .2s}
+    .service-details[open] summary::before{transform:rotate(90deg)}
+    .service-description{margin-top:8px;padding:10px;background:rgba(0,0,0,.15);border-radius:6px;font-size:11px;line-height:1.5}
+    .service-description p{margin:0 0 8px}
+    .service-description p:last-child{margin-bottom:0}
+    .service-description ul{margin:6px 0 0;padding-left:20px}
+    .service-description li{margin-bottom:4px}
+    .service-description li:last-child{margin-bottom:0}
   `]
 })
 export class CommunicationVisualizerComponent implements OnInit, OnDestroy {
